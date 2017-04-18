@@ -102,12 +102,16 @@ class HumanPlayer(Player):
         game.print_state()
         move = None
         while move is None or not game.is_legal_move(move, self):
-            move_str = input('> ')
-            move = game.string_to_move(move_str, self)
-            if move is not None and game.is_legal_move(move, self):
-                return move
-            else:
-                print('Invalid move')
+            try:
+                move_str = input('> ')
+                move = game.string_to_move(move_str, self)
+                if move is not None and game.is_legal_move(move, self):
+                    return move
+                else:
+                    print('Invalid move')
+            except KeyboardInterrupt:
+                print('\nEnding game. Goodbye!')
+                exit(0)
 
 
 class AIPlayer(Player):
@@ -119,6 +123,7 @@ class AIPlayer(Player):
         pass
 
     def get_move_for_game(self, game):
+        time_remaining = self.max_soft_thinking_time
         game.print_state()
         legal_moves = game.get_legal_moves()
         # Intentionally error out straight away if no legal moves exist
@@ -130,14 +135,15 @@ class AIPlayer(Player):
         max_depth = 100
         depth = 0
         estimated_next_duration = 0
-        while (estimated_next_duration < self.max_soft_thinking_time and depth < max_depth) or depth <= min_depth:
+        while (estimated_next_duration < time_remaining and depth < max_depth) or depth <= min_depth:
             depth += 1
             best_move = self.alpha_beta_from_root(legal_moves, game, depth, game.turn_number)
             search_ended_time = time.time()
             previous_search_duration = search_ended_time - current_time
             estimated_next_duration = previous_search_duration * branching_factor_sqrt
+            time_remaining -= previous_search_duration
             current_time = time.time()
-        print('> ' + str(best_move.dest_col))
+        print('AI: ' + str(best_move.dest_col + 1))
         return best_move
 
     def alpha_beta_from_root(self, legal_moves, game, max_depth, turn_number):
